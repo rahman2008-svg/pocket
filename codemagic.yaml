@@ -1,7 +1,7 @@
 workflows:
   android-build:
-    name: PocketPal AI Android Build
-    max_build_duration: 60
+    name: PocketPal AI APK
+
     environment:
       flutter: stable
       java: 17
@@ -12,19 +12,17 @@ workflows:
         - ~/.gradle
 
     scripts:
+      - name: Show files (debug)
+        script: ls -la
+
       - name: Get dependencies
         script: flutter pub get
 
       - name: Clean build
         script: flutter clean
 
-      - name: Build APK (Release)
+      - name: Build APK
         script: flutter build apk --release
 
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
-
-    publishing:
-      email:
-        recipients:
-          - your-email@gmail.com
