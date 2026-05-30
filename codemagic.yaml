@@ -1,28 +1,29 @@
 workflows:
   android-build:
-    name: PocketPal AI APK
+    name: QuantumMind AI APK
 
     environment:
-      flutter: stable
+      node: 18
       java: 17
 
     cache:
       cache_paths:
-        - ~/.pub-cache
+        - ~/.npm
         - ~/.gradle
+        - ~/.yarn
 
     scripts:
       - name: Show files (debug)
         script: ls -la
 
-      - name: Get dependencies
-        script: flutter pub get
+      - name: Install dependencies
+        script: npm install
 
-      - name: Clean build
-        script: flutter clean
+      - name: Clean Android build
+        script: cd android && ./gradlew clean
 
-      - name: Build APK
-        script: flutter build apk --release
+      - name: Build Release APK
+        script: cd android && ./gradlew assembleRelease
 
     artifacts:
-      - build/app/outputs/flutter-apk/app-release.apk
+      - android/app/build/outputs/apk/release/app-release.apk
