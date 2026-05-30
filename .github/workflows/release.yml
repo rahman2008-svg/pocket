@@ -1,12 +1,17 @@
-name: QuantumMind AI Release APK
+name: Release Workflow
 
 on:
   workflow_dispatch:
     inputs:
       version_type:
         description: "Version bump type"
-        required: false
+        required: true
         default: "patch"
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
 
 jobs:
   build_android:
@@ -16,59 +21,54 @@ jobs:
       contents: write
 
     steps:
-      # 1️⃣ Checkout repo
+      # 1. Checkout
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 2️⃣ Setup Java
-      - name: Set up JDK 17
+      # 2. Setup Node
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      # 3. Setup Java
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      # 3️⃣ Setup Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-          cache: yarn
-
-      # 4️⃣ Install dependencies
+      # 4. Install dependencies
       - name: Install dependencies
-        run: |
-          yarn install || npm install
+        run: yarn install
 
-      # 5️⃣ Give permission to Gradle
-      - name: Make gradlew executable
-        run: chmod +x android/gradlew
-
-      # 6️⃣ Clean build
+      # 5. Clean project
       - name: Clean project
         run: |
           cd android
           ./gradlew clean
 
-      # 7️⃣ Build Release APK
-      - name: Build APK
+      # 6. Decode keystore (IMPORTANT)
+      - name: Setup Keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
+
+      # 7. Build APK (DIRECT GRADLE, no fastlane confusion)
+      - name: Build Release APK
         run: |
           cd android
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease \
+          -Pandroid.injected.signing.store.file=app/release.keystore \
+          -Pandroid.injected.signing.store.password=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
+          -Pandroid.injected.signing.key.alias=${{ secrets.ANDROID_KEY_ALIAS }} \
+          -Pandroid.injected.signing.key.password=${{ secrets.ANDROID_KEY_PASSWORD }}
 
-      # 8️⃣ Upload APK artifact
-      - name: Upload APK
+      # 8. Upload APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: QuantumMind-AI-APK
           path: android/app/build/outputs/apk/release/app-release.apk
-
-      # 9️⃣ (Optional) Create Git Tag
-      - name: Create Git Tag
-        run: |
-          echo "Creating tag..."
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git tag v1.0.${{ github.run_number }}
-          git push origin --tags
