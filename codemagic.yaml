@@ -1,28 +1,33 @@
 workflows:
-android-build:
-name: Pocket React Native APK
+  android-build:
+    name: Pocket React Native APK
 
-environment:
-  java: 17
+    environment:
+      node: 22.21.0
+      java: 17
 
-cache:
-  cache_paths:
-    - ~/.gradle/caches
-    - ~/.gradle/wrapper
-    - ~/.npm
-    - ~/.yarn
+    cache:
+      cache_paths:
+        - ~/.gradle/caches
+        - ~/.gradle/wrapper
+        - ~/.npm
+        - ~/.yarn
 
-scripts:
-  - name: Install dependencies
-    script: |
-      yarn install
+    scripts:
+      - name: Install dependencies
+        script: yarn install --frozen-lockfile
 
-  - name: Build APK
-    script: |
-      cd android
-      chmod +x gradlew
-      ./gradlew assembleRelease
+      - name: Clean Android
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew clean
 
-artifacts:
-  - android/app/build/outputs/apk/release/*.apk
-  - android/app/build/outputs/**/*.aab
+      - name: Build APK
+        script: |
+          cd android
+          ./gradlew assembleRelease
+
+    artifacts:
+      - android/app/build/outputs/apk/release/*.apk
+      - android/app/build/outputs/**/*.aab
