@@ -1,29 +1,48 @@
 workflows:
-  android-build:
-    name: QuantumMind AI APK
+  android-release:
+    name: Pocket Android Release
+    max_build_duration: 120
+    instance_type: mac_mini_m2
 
     environment:
-      node: 18
-      java: 17
+      java: 21
 
     cache:
       cache_paths:
-        - ~/.npm
-        - ~/.gradle
-        - ~/.yarn
+        - ~/.gradle/caches
+        - ~/.gradle/wrapper
 
     scripts:
-      - name: Show files (debug)
-        script: ls -la
+      - name: Set Android SDK
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
 
-      - name: Install dependencies
-        script: npm install
+      - name: Grant Permission
+        script: |
+          chmod +x gradlew
 
-      - name: Clean Android build
-        script: cd android && ./gradlew clean
+      - name: Clean Project
+        script: |
+          ./gradlew clean
 
-      - name: Build Release APK
-        script: cd android && ./gradlew assembleRelease
+      - name: Build APK
+        script: |
+          ./gradlew assembleRelease
+
+      - name: Build AAB
+        script: |
+          ./gradlew bundleRelease
 
     artifacts:
-      - android/app/build/outputs/apk/release/app-release.apk
+      - app/build/outputs/**/*.apk
+      - app/build/outputs/**/*.aab
+      - build/**/outputs/**/*.apk
+      - build/**/outputs/**/*.aab
+
+    publishing:
+      email:
+        recipients:
+          - prince.ar.abdur.rahman2008@gmail.com
+        notify:
+          success: true
+          failure: true
